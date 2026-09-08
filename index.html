@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#b91c1c">
+  <title>DocSpace — Office</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">D</div>
+        <div>
+          <div class="brand-name">DocSpace</div>
+          <div class="brand-sub">Office</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="themeBtn" title="Toggle theme">☾</button>
+        <button class="avatar">S</button>
+      </div>
+    </header>
+
+    <main class="home" id="homeView">
+      <section class="hero">
+        <div>
+          <h1>Good day.</h1>
+          <p>Create, read and edit your documents — right in your browser.</p>
+        </div>
+        <div class="hero-actions">
+          <button class="primary" id="newDocBtn">＋ New document</button>
+          <button class="secondary" id="openFileBtn">Open file</button>
+          <input type="file" id="fileInput" hidden accept=".txt,.html,.htm,.pdf">
+        </div>
+      </section>
+
+      <section class="quick-grid">
+        <button class="quick-card" id="blankBtn">
+          <span class="quick-icon word">W</span>
+          <span><b>Blank document</b><small>Start writing from scratch</small></span>
+        </button>
+        <button class="quick-card" id="notesBtn">
+          <span class="quick-icon notes">N</span>
+          <span><b>Quick notes</b><small>Open a simple notes page</small></span>
+        </button>
+      </section>
+
+      <section class="recent-section">
+        <div class="section-head">
+          <h2>Recent documents</h2>
+          <button class="text-btn" id="clearRecentBtn">Clear</button>
+        </div>
+        <div id="recentList" class="recent-list"></div>
+      </section>
+    </main>
+
+    <main class="editor-view hidden" id="editorView">
+      <div class="editor-head">
+        <button class="back-btn" id="backBtn">←</button>
+        <div class="doc-title-wrap">
+          <input id="docTitle" value="Untitled Document">
+          <span id="saveState">Saved</span>
+        </div>
+        <button class="primary small" id="saveBtn">Save</button>
+      </div>
+
+      <div class="toolbar">
+        <button data-cmd="undo" title="Undo">↶</button>
+        <button data-cmd="redo" title="Redo">↷</button>
+        <span class="divider"></span>
+        <select id="formatBlock">
+          <option value="p">Normal</option>
+          <option value="h1">Heading 1</option>
+          <option value="h2">Heading 2</option>
+          <option value="h3">Heading 3</option>
+        </select>
+        <select id="fontSize">
+          <option value="2">12</option>
+          <option value="3" selected>16</option>
+          <option value="4">18</option>
+          <option value="5">24</option>
+          <option value="6">32</option>
+          <option value="7">40</option>
+        </select>
+        <button data-cmd="bold"><b>B</b></button>
+        <button data-cmd="italic"><i>I</i></button>
+        <button data-cmd="underline"><u>U</u></button>
+        <span class="divider"></span>
+        <button data-cmd="justifyLeft">≡</button>
+        <button data-cmd="justifyCenter">≡</button>
+        <button data-cmd="justifyRight">≡</button>
+        <button data-cmd="insertUnorderedList">• List</button>
+        <button data-cmd="insertOrderedList">1. List</button>
+        <span class="divider"></span>
+        <button id="printBtn">Print</button>
+        <button id="downloadBtn">Download HTML</button>
+      </div>
+
+      <div class="workspace">
+        <div class="page" id="editor" contenteditable="true" spellcheck="true">
+          <p>Start writing here...</p>
+        </div>
+      </div>
+    </main>
+
+    <main class="reader-view hidden" id="readerView">
+      <div class="reader-head">
+        <button class="back-btn" id="readerBack">←</button>
+        <strong id="readerTitle">Document</strong>
+        <button class="secondary small" id="readerDownload">Download</button>
+      </div>
+      <div id="readerContent" class="reader-content"></div>
+    </main>
+
+    <div class="toast" id="toast"></div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
