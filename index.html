@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#b91c1c">
+  <meta name="author" content="Sulieman Khan">
+  <meta name="description" content="DocSpace Office — a lightweight browser-based document reader/editor, built by Sulieman Khan.">
   <title>DocSpace — Office</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -54,15 +56,20 @@
         </div>
         <div id="recentList" class="recent-list"></div>
       </section>
+
+      <footer class="app-footer">
+        <span>DocSpace Office · Built by <strong>Sulieman Khan</strong></span>
+      </footer>
     </main>
 
     <main class="editor-view hidden" id="editorView">
       <div class="editor-head">
-        <button class="back-btn" id="backBtn">←</button>
+        <button class="back-btn" id="backBtn" title="Back">←</button>
         <div class="doc-title-wrap">
           <input id="docTitle" value="Untitled Document">
           <span id="saveState">Saved</span>
         </div>
+        <span id="wordCount" class="word-count">0 words</span>
         <button class="primary small" id="saveBtn">Save</button>
       </div>
 
@@ -70,13 +77,13 @@
         <button data-cmd="undo" title="Undo">↶</button>
         <button data-cmd="redo" title="Redo">↷</button>
         <span class="divider"></span>
-        <select id="formatBlock">
+        <select id="formatBlock" title="Paragraph style">
           <option value="p">Normal</option>
           <option value="h1">Heading 1</option>
           <option value="h2">Heading 2</option>
           <option value="h3">Heading 3</option>
         </select>
-        <select id="fontSize">
+        <select id="fontSize" title="Font size">
           <option value="2">12</option>
           <option value="3" selected>16</option>
           <option value="4">18</option>
@@ -84,18 +91,18 @@
           <option value="6">32</option>
           <option value="7">40</option>
         </select>
-        <button data-cmd="bold"><b>B</b></button>
-        <button data-cmd="italic"><i>I</i></button>
-        <button data-cmd="underline"><u>U</u></button>
+        <button data-cmd="bold" title="Bold"><b>B</b></button>
+        <button data-cmd="italic" title="Italic"><i>I</i></button>
+        <button data-cmd="underline" title="Underline"><u>U</u></button>
         <span class="divider"></span>
-        <button data-cmd="justifyLeft">≡</button>
-        <button data-cmd="justifyCenter">≡</button>
-        <button data-cmd="justifyRight">≡</button>
-        <button data-cmd="insertUnorderedList">• List</button>
-        <button data-cmd="insertOrderedList">1. List</button>
+        <button data-cmd="justifyLeft" title="Align left">≡</button>
+        <button data-cmd="justifyCenter" title="Align center">≡</button>
+        <button data-cmd="justifyRight" title="Align right">≡</button>
+        <button data-cmd="insertUnorderedList" title="Bulleted list">• List</button>
+        <button data-cmd="insertOrderedList" title="Numbered list">1. List</button>
         <span class="divider"></span>
-        <button id="printBtn">Print</button>
-        <button id="downloadBtn">Download HTML</button>
+        <button id="printBtn" title="Print">Print</button>
+        <button id="downloadBtn" title="Download as HTML">Download HTML</button>
       </div>
 
       <div class="workspace">
@@ -107,7 +114,7 @@
 
     <main class="reader-view hidden" id="readerView">
       <div class="reader-head">
-        <button class="back-btn" id="readerBack">←</button>
+        <button class="back-btn" id="readerBack" title="Back">←</button>
         <strong id="readerTitle">Document</strong>
         <button class="secondary small" id="readerDownload">Download</button>
       </div>
