@@ -8,6 +8,24 @@ A browser-based document reader/editor — PDF, Word (.docx), Excel (.xlsx/.xls/
 Just open `index.html` in a browser — no build step required.
 Requires an internet connection on first load (PDF, Word, and Excel parsing
 libraries are loaded from a CDN).
+Note: the Install button and offline caching only work when served over
+HTTPS (e.g. your Vercel deployment) — opening `index.html` directly from
+disk (`file://`) won't offer an install prompt, since service workers
+require a secure context.
+
+## Install as an app
+DocSpace is a PWA (installable web app). Once it's deployed and open in a
+browser tab:
+- **Chrome / Edge (desktop):** an install icon (⤓) appears in DocSpace's own
+  top bar — click it, or use the install icon in the browser's address bar.
+- **Chrome / Edge (Windows/Mac/Linux) manually:** menu (⋮) → "Install DocSpace…"
+- **Safari (Mac):** File → Add to Dock (Safari 17+)
+- **Android Chrome:** menu → "Install app" / "Add to Home screen"
+
+It then opens in its own window without browser tabs/address bar, with its
+own icon, and works offline for the app shell itself (opening new PDF/Word/
+Excel files still needs internet the first time, to load the parsing
+libraries from CDN).
 
 ## Deploy on Vercel
 This is a plain static site (no framework, no `package.json`).

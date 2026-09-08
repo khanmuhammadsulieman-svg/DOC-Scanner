@@ -8,6 +8,12 @@
   <meta name="description" content="DocSpace Office — a browser-based document reader/editor for PDF, Word, Excel, TXT and HTML files. Built by Sulieman Khan.">
   <title>DocSpace — Office</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="DocSpace">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
   <div id="app">
@@ -20,6 +26,7 @@
         </div>
       </div>
       <div class="top-actions">
+        <button class="icon-btn hidden" id="installBtn" title="Install DocSpace as an app">⤓</button>
         <button class="icon-btn" id="themeBtn" title="Toggle theme">☾</button>
         <button class="avatar">S</button>
       </div>

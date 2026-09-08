@@ -401,6 +401,39 @@
       }
     });
 
+    // ---------- Installable app (PWA) ----------
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw.js").catch(function (err) {
+          console.warn("[DocSpace] Service worker registration failed:", err);
+        });
+      });
+    }
+
+    var deferredInstallPrompt = null;
+    window.addEventListener("beforeinstallprompt", function (e) {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      var btn = $("#installBtn");
+      if (btn) btn.classList.remove("hidden");
+    });
+
+    on("#installBtn", "click", async function () {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      var choice = await deferredInstallPrompt.userChoice;
+      if (choice.outcome === "accepted") toast("Installing DocSpace\u2026");
+      deferredInstallPrompt = null;
+      var btn = $("#installBtn");
+      if (btn) btn.classList.add("hidden");
+    });
+
+    window.addEventListener("appinstalled", function () {
+      toast("DocSpace installed");
+      var btn = $("#installBtn");
+      if (btn) btn.classList.add("hidden");
+    });
+
     renderRecent();
   }
 })();
