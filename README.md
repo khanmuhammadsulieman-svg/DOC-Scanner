@@ -33,6 +33,13 @@ This is a plain static site (no framework, no `package.json`).
 | .html / .htm | Opened directly into the editor |
 | .doc (legacy) | Not yet supported — convert to .docx first |
 
+## Reader experience
+Opening a PDF, Word, or Excel file switches to a **fullscreen reader** — the
+site header is hidden, an edit/action toolbar sits at the top, and (for
+multi-page PDFs or multi-sheet spreadsheets) a page/sheet rail sits on the
+left, similar to Chrome's built-in PDF viewer. Click a thumbnail or sheet name
+in the rail to jump straight to it.
+
 ## Other features
 - New document / quick notes, rich text editing, undo/redo
 - Formatting, alignment, lists, live word count

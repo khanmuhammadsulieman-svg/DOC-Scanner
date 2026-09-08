@@ -113,14 +113,18 @@
     </main>
 
     <main class="reader-view hidden" id="readerView">
-      <div class="reader-head">
+      <div class="reader-toolbar">
         <button class="back-btn" id="readerBack" title="Back">←</button>
         <strong id="readerTitle">Document</strong>
         <span id="readerMeta" class="reader-meta"></span>
-        <button class="secondary small" id="readerDownload">Download</button>
+        <button class="secondary small" id="readerEditBtn">Edit</button>
+        <button class="secondary small" id="printBtnReader">Print</button>
+        <button class="primary small" id="readerDownload">Download</button>
       </div>
-      <div id="sheetTabs" class="sheet-tabs hidden"></div>
-      <div id="readerContent" class="reader-content"></div>
+      <div class="reader-body">
+        <aside class="reader-sidebar hidden" id="readerSidebar"></aside>
+        <div id="readerContent" class="reader-content"></div>
+      </div>
     </main>
 
     <div class="toast" id="toast"></div>

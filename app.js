@@ -137,10 +137,10 @@
     // ---------- Reader view helpers ----------
     function readerSetup(title, metaText) {
       show(readerView);
-      var titleEl = $("#readerTitle"), metaEl = $("#readerMeta"), tabs = $("#sheetTabs"), content = $("#readerContent");
+      var titleEl = $("#readerTitle"), metaEl = $("#readerMeta"), sidebar = $("#readerSidebar"), content = $("#readerContent");
       if (titleEl) titleEl.textContent = title;
       if (metaEl) metaEl.textContent = metaText || "";
-      if (tabs) { tabs.classList.add("hidden"); tabs.innerHTML = ""; }
+      if (sidebar) { sidebar.classList.add("hidden"); sidebar.innerHTML = ""; }
       if (content) content.innerHTML = '<div class="doc-loading">Loading\u2026</div>';
       return content;
     }
@@ -162,19 +162,55 @@
         var metaEl = $("#readerMeta");
         if (metaEl) metaEl.textContent = "PDF · " + pdf.numPages + (pdf.numPages === 1 ? " page" : " pages");
 
+        var sidebar = $("#readerSidebar");
+        var showSidebar = pdf.numPages > 1 && sidebar;
+        if (showSidebar) sidebar.classList.remove("hidden");
+
         for (var i = 1; i <= pdf.numPages; i++) {
           var page = await pdf.getPage(i);
+
+          // Full-size render for the main content area
           var viewport = page.getViewport({ scale: 1.4 });
+          var block = document.createElement("div");
+          block.className = "pdf-page-block";
+          block.id = "pdf-page-" + i;
           var canvas = document.createElement("canvas");
           canvas.className = "pdf-page";
           canvas.width = viewport.width;
           canvas.height = viewport.height;
           await page.render({ canvasContext: canvas.getContext("2d"), viewport: viewport }).promise;
-          wrap.appendChild(canvas);
+          block.appendChild(canvas);
           var label = document.createElement("div");
           label.className = "pdf-page-num";
           label.textContent = "Page " + i + " of " + pdf.numPages;
-          wrap.appendChild(label);
+          block.appendChild(label);
+          wrap.appendChild(block);
+
+          // Small thumbnail for the left page rail
+          if (showSidebar) {
+            var thumbViewport = page.getViewport({ scale: 0.18 });
+            var thumbCanvas = document.createElement("canvas");
+            thumbCanvas.width = thumbViewport.width;
+            thumbCanvas.height = thumbViewport.height;
+            await page.render({ canvasContext: thumbCanvas.getContext("2d"), viewport: thumbViewport }).promise;
+
+            var thumbBtn = document.createElement("button");
+            thumbBtn.className = "thumb" + (i === 1 ? " active" : "");
+            thumbBtn.appendChild(thumbCanvas);
+            (function (pageNum, btn) {
+              btn.onclick = function () {
+                sidebar.querySelectorAll(".thumb").forEach(function (t) { t.classList.remove("active"); });
+                btn.classList.add("active");
+                var target = $("#pdf-page-" + pageNum);
+                if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+              };
+            })(i, thumbBtn);
+            sidebar.appendChild(thumbBtn);
+            var thumbLabel = document.createElement("div");
+            thumbLabel.className = "thumb-label";
+            thumbLabel.textContent = i;
+            sidebar.appendChild(thumbLabel);
+          }
         }
         content.innerHTML = "";
         content.appendChild(wrap);
@@ -219,21 +255,21 @@
         if (metaEl) metaEl.textContent = ext.toUpperCase() + " · " + wb.SheetNames.length +
           (wb.SheetNames.length === 1 ? " sheet" : " sheets");
 
-        var tabs = $("#sheetTabs");
-        if (tabs && wb.SheetNames.length > 1) {
-          tabs.classList.remove("hidden");
-          tabs.innerHTML = wb.SheetNames.map(function (name, i) {
-            return '<button class="sheet-tab' + (i === 0 ? " active" : "") + '" data-sheet="' + escapeHtml(name) + '">' + escapeHtml(name) + '</button>';
+        var sidebar = $("#readerSidebar");
+        if (sidebar && wb.SheetNames.length > 1) {
+          sidebar.classList.remove("hidden");
+          sidebar.innerHTML = wb.SheetNames.map(function (name, i) {
+            return '<button class="sheet-list-item' + (i === 0 ? " active" : "") + '" data-sheet="' + escapeHtml(name) + '">' + escapeHtml(name) + '</button>';
           }).join("");
-          tabs.querySelectorAll(".sheet-tab").forEach(function (btn) {
+          sidebar.querySelectorAll(".sheet-list-item").forEach(function (btn) {
             btn.onclick = function () {
-              tabs.querySelectorAll(".sheet-tab").forEach(function (b) { b.classList.remove("active"); });
+              sidebar.querySelectorAll(".sheet-list-item").forEach(function (b) { b.classList.remove("active"); });
               btn.classList.add("active");
               renderSheet(wb, btn.dataset.sheet);
             };
           });
-        } else if (tabs) {
-          tabs.classList.add("hidden");
+        } else if (sidebar) {
+          sidebar.classList.add("hidden");
         }
         renderSheet(wb, wb.SheetNames[0]);
       } catch (err) {
@@ -343,6 +379,19 @@
 
     on("#readerDownload", "click", function () {
       if (currentFile) downloadBlob("", currentFile.name || "document", "application/octet-stream");
+    });
+
+    on("#printBtnReader", "click", function () { window.print(); });
+
+    on("#readerEditBtn", "click", function () {
+      var docxPage = $(".docx-page");
+      if (docxPage) {
+        // Word docs can be handed off to the rich-text editor for editing
+        newDoc(docxPage.innerHTML, currentFile ? currentFile.name : "Document");
+        toast("Opened in editor");
+      } else {
+        toast("Editing isn't supported for this file type yet — try Download instead.");
+      }
     });
 
     document.addEventListener("keydown", function (e) {
