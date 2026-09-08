@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#b91c1c">
   <meta name="author" content="Sulieman Khan">
-  <meta name="description" content="DocSpace Office — a lightweight browser-based document reader/editor, built by Sulieman Khan.">
+  <meta name="description" content="DocSpace Office — a browser-based document reader/editor for PDF, Word, Excel, TXT and HTML files. Built by Sulieman Khan.">
   <title>DocSpace — Office</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -29,12 +29,12 @@
       <section class="hero">
         <div>
           <h1>Good day.</h1>
-          <p>Create, read and edit your documents — right in your browser.</p>
+          <p>Create, read and edit documents — PDF, Word, Excel, TXT and HTML — right in your browser.</p>
         </div>
         <div class="hero-actions">
           <button class="primary" id="newDocBtn">＋ New document</button>
           <button class="secondary" id="openFileBtn">Open file</button>
-          <input type="file" id="fileInput" hidden accept=".txt,.html,.htm,.pdf">
+          <input type="file" id="fileInput" hidden accept=".txt,.html,.htm,.pdf,.docx,.xlsx,.xls,.csv">
         </div>
       </section>
 
@@ -116,13 +116,21 @@
       <div class="reader-head">
         <button class="back-btn" id="readerBack" title="Back">←</button>
         <strong id="readerTitle">Document</strong>
+        <span id="readerMeta" class="reader-meta"></span>
         <button class="secondary small" id="readerDownload">Download</button>
       </div>
+      <div id="sheetTabs" class="sheet-tabs hidden"></div>
       <div id="readerContent" class="reader-content"></div>
     </main>
 
     <div class="toast" id="toast"></div>
   </div>
+
+  <!-- Document parsing libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
   <script src="app.js"></script>
 </body>
 </html>

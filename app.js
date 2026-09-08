@@ -10,8 +10,6 @@
   function init() {
     var $ = function (s) { return document.querySelector(s); };
 
-    // Bind an event only if the element actually exists.
-    // A single missing/misnamed element can no longer break every other button on the page.
     function on(sel, evt, fn) {
       var el = typeof sel === "string" ? $(sel) : sel;
       if (!el) { console.warn("[DocSpace] element not found:", sel); return; }
@@ -20,11 +18,17 @@
 
     var home = $("#homeView"), editorView = $("#editorView"), readerView = $("#readerView"), editor = $("#editor");
     var recentKey = "docspace_recent_v1";
-    var currentFile = null, autosaveTimer = null;
+    var currentFile = null, autosaveTimer = null, currentWorkbook = null;
 
     if (!home || !editorView || !readerView || !editor) {
       console.error("[DocSpace] Core view elements missing — check index.html ids.");
       return;
+    }
+
+    // pdf.js needs its worker pointed at a matching CDN build
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
     }
 
     function toast(msg) {
@@ -76,7 +80,11 @@
           '</small></div><span>\u203a</span></div>';
       }).join("");
       box.querySelectorAll(".recent-item").forEach(function (el) {
-        el.onclick = function () { openRecent(a[el.dataset.i]); };
+        el.onclick = function () {
+          var item = a[el.dataset.i];
+          if (item && item.content) newDoc(item.content, item.name);
+          else toast("This file must be opened again from your device.");
+        };
       });
     }
 
@@ -90,11 +98,6 @@
       show(editorView);
       updateWordCount();
       setTimeout(function () { editor.focus(); }, 150);
-    }
-
-    function openRecent(x) {
-      if (x && x.content) newDoc(x.content, x.name);
-      else toast("This file must be opened again from your device.");
     }
 
     function updateWordCount() {
@@ -131,35 +134,124 @@
       setTimeout(function () { URL.revokeObjectURL(a.href); }, 500);
     }
 
-    async function openPdfReader(file) {
+    // ---------- Reader view helpers ----------
+    function readerSetup(title, metaText) {
       show(readerView);
-      var titleEl = $("#readerTitle"), contentEl = $("#readerContent");
-      if (titleEl) titleEl.textContent = file.name;
-      if (contentEl) contentEl.innerHTML = "<p>Loading PDF\u2026</p>";
+      var titleEl = $("#readerTitle"), metaEl = $("#readerMeta"), tabs = $("#sheetTabs"), content = $("#readerContent");
+      if (titleEl) titleEl.textContent = title;
+      if (metaEl) metaEl.textContent = metaText || "";
+      if (tabs) { tabs.classList.add("hidden"); tabs.innerHTML = ""; }
+      if (content) content.innerHTML = '<div class="doc-loading">Loading\u2026</div>';
+      return content;
+    }
+
+    function readerError(msg) {
+      var content = $("#readerContent");
+      if (content) content.innerHTML = '<div class="reader-error">' + escapeHtml(msg) + '</div>';
+    }
+
+    // ---------- PDF (pdf.js) ----------
+    async function openPdfReader(file) {
+      var content = readerSetup(file.name, "PDF");
+      if (!window.pdfjsLib) { readerError("PDF engine failed to load. Check your internet connection and refresh."); return; }
       try {
         var buf = await file.arrayBuffer();
-        var bytes = new Uint8Array(buf);
-        var raw = new TextDecoder("latin1").decode(bytes);
-        var chunks = raw.replace(/\r/g, "").match(/BT[\s\S]*?ET/g);
-        var text = chunks ? chunks.join("\n") : "";
-        text = text
-          .replace(/\\\\/g, "")
-          .replace(/\((.*?)\)\s*Tj/g, "$1\n")
-          .replace(/\[(.*?)\]\s*TJ/g, "$1\n")
-          .replace(/<[^>]+>/g, "")
-          .replace(/[^\x20-\x7E\n]+/g, " ");
-        if (contentEl) {
-          contentEl.innerHTML = "<h2>" + escapeHtml(file.name) + "</h2>" +
-            "<p class='muted'>PDF preview (basic text extraction). For complex/scanned PDFs, use a dedicated PDF viewer.</p>" +
-            "<pre>" + escapeHtml(text.slice(0, 100000)) + "</pre>";
+        var pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+        var wrap = document.createElement("div");
+        wrap.className = "pdf-pages";
+        var metaEl = $("#readerMeta");
+        if (metaEl) metaEl.textContent = "PDF · " + pdf.numPages + (pdf.numPages === 1 ? " page" : " pages");
+
+        for (var i = 1; i <= pdf.numPages; i++) {
+          var page = await pdf.getPage(i);
+          var viewport = page.getViewport({ scale: 1.4 });
+          var canvas = document.createElement("canvas");
+          canvas.className = "pdf-page";
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          await page.render({ canvasContext: canvas.getContext("2d"), viewport: viewport }).promise;
+          wrap.appendChild(canvas);
+          var label = document.createElement("div");
+          label.className = "pdf-page-num";
+          label.textContent = "Page " + i + " of " + pdf.numPages;
+          wrap.appendChild(label);
         }
+        content.innerHTML = "";
+        content.appendChild(wrap);
       } catch (err) {
-        if (contentEl) contentEl.innerHTML = "<p>Could not preview this PDF in the basic reader.</p>";
-        console.warn("[DocSpace] PDF preview failed:", err);
+        console.warn("[DocSpace] PDF render failed:", err);
+        readerError("Could not open this PDF. It may be encrypted, corrupted, or password-protected.");
       }
     }
 
-    // --- Wire up all controls defensively ---
+    // ---------- Word (.docx via Mammoth) ----------
+    async function openDocxReader(file) {
+      var content = readerSetup(file.name, "Word document");
+      if (!window.mammoth) { readerError("Word engine failed to load. Check your internet connection and refresh."); return; }
+      try {
+        var buf = await file.arrayBuffer();
+        var result = await mammoth.convertToHtml({ arrayBuffer: buf });
+        content.innerHTML = '<div class="docx-page">' + result.value + '</div>';
+        if (result.messages && result.messages.length) {
+          console.info("[DocSpace] Word conversion notes:", result.messages);
+        }
+      } catch (err) {
+        console.warn("[DocSpace] DOCX render failed:", err);
+        readerError("Could not open this Word file. Only modern .docx files are supported (not legacy .doc).");
+      }
+    }
+
+    // ---------- Excel / CSV (SheetJS) ----------
+    async function openSheetReader(file, ext) {
+      var content = readerSetup(file.name, ext.toUpperCase());
+      if (!window.XLSX) { readerError("Spreadsheet engine failed to load. Check your internet connection and refresh."); return; }
+      try {
+        var wb;
+        if (ext === "csv") {
+          var text = await file.text();
+          wb = XLSX.read(text, { type: "string" });
+        } else {
+          var buf = await file.arrayBuffer();
+          wb = XLSX.read(buf, { type: "array" });
+        }
+        currentWorkbook = wb;
+        var metaEl = $("#readerMeta");
+        if (metaEl) metaEl.textContent = ext.toUpperCase() + " · " + wb.SheetNames.length +
+          (wb.SheetNames.length === 1 ? " sheet" : " sheets");
+
+        var tabs = $("#sheetTabs");
+        if (tabs && wb.SheetNames.length > 1) {
+          tabs.classList.remove("hidden");
+          tabs.innerHTML = wb.SheetNames.map(function (name, i) {
+            return '<button class="sheet-tab' + (i === 0 ? " active" : "") + '" data-sheet="' + escapeHtml(name) + '">' + escapeHtml(name) + '</button>';
+          }).join("");
+          tabs.querySelectorAll(".sheet-tab").forEach(function (btn) {
+            btn.onclick = function () {
+              tabs.querySelectorAll(".sheet-tab").forEach(function (b) { b.classList.remove("active"); });
+              btn.classList.add("active");
+              renderSheet(wb, btn.dataset.sheet);
+            };
+          });
+        } else if (tabs) {
+          tabs.classList.add("hidden");
+        }
+        renderSheet(wb, wb.SheetNames[0]);
+      } catch (err) {
+        console.warn("[DocSpace] Spreadsheet render failed:", err);
+        readerError("Could not open this spreadsheet. The file may be corrupted or in an unsupported format.");
+      }
+    }
+
+    function renderSheet(wb, sheetName) {
+      var content = $("#readerContent");
+      if (!content) return;
+      var sheet = wb.Sheets[sheetName];
+      var html = XLSX.utils.sheet_to_html(sheet, { id: "___tbl" });
+      html = html.replace('id="___tbl"', 'class="sheet-table"');
+      content.innerHTML = '<div class="sheet-table-wrap">' + html + '</div>';
+    }
+
+    // ---------- Wire up controls ----------
     on("#newDocBtn", "click", function () { newDoc(); });
     on("#blankBtn", "click", function () { newDoc(); });
     on("#notesBtn", "click", function () { newDoc("<h2>Quick Notes</h2><p></p>", "Quick Notes"); });
@@ -231,7 +323,17 @@
       if (!f) return;
       currentFile = f;
       var ext = f.name.split(".").pop().toLowerCase();
+
       if (ext === "pdf") { await openPdfReader(f); e.target.value = ""; return; }
+      if (ext === "docx") { await openDocxReader(f); e.target.value = ""; return; }
+      if (ext === "xlsx" || ext === "xls" || ext === "csv") { await openSheetReader(f, ext); e.target.value = ""; return; }
+      if (ext === "doc") {
+        readerSetup(f.name, "Word document");
+        readerError("Legacy .doc files aren't supported yet — please save as .docx and reopen.");
+        e.target.value = "";
+        return;
+      }
+
       var text = await f.text();
       if (ext === "txt") newDoc("<pre>" + escapeHtml(text) + "</pre>", f.name);
       else newDoc(text, f.name);
@@ -243,7 +345,6 @@
       if (currentFile) downloadBlob("", currentFile.name || "document", "application/octet-stream");
     });
 
-    // Ctrl/Cmd+S saves the current document instead of triggering the browser's save dialog
     document.addEventListener("keydown", function (e) {
       if ((e.ctrlKey || e.metaKey) && e.key === "s" && !editorView.classList.contains("hidden")) {
         e.preventDefault();
